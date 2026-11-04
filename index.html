@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Калькулятор натяжных потолков — ПотолокМастер</title>
+<meta name="description" content="Рассчитайте стоимость потолка с установкой за 2 минуты. Бесплатный замер, гарантия 15 лет.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>">
+<!-- Open Graph. Значения дублируются из TEXTS при загрузке страницы (см. applyTexts) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Калькулятор натяжных потолков — ПотолокМастер">
+<meta property="og:description" content="Рассчитайте стоимость потолка с установкой за 2 минуты. Бесплатный замер, гарантия 15 лет.">
+<style>
+  /* Цвета подставляются из CONFIG.colors (функция applyTheme) */
+  :root {
+    --primary: #1E40AF;
+    --primary-rgb: 30, 64, 175;
+    --primary-dark: #1E3A8A;
+    --primary-soft: #EEF2FF;
+    --accent: #F59E0B;
+    --accent-rgb: 245, 158, 11;
+    --accent-dark: #D97706;
+    --bg: #F8FAFC;
+    --text: #1E293B;
+    --muted: #64748B;
+    --border: #E2E8F0;
+    --error: #DC2626;
+    --ok: #16A34A;
+    --card-shadow: 0 1px 3px rgba(0,0,0,.1);
+    --ease: cubic-bezier(.4, 0, .2, 1);
+    --spring: cubic-bezier(.34, 1.56, .64, 1);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.5;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding-bottom: 96px; /* место под плавающую плашку */
+  }
+  button { font: inherit; cursor: pointer; color: inherit; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 800px; margin: 0 auto; padding: 0 16px; }
+  .card { background: #fff; border-radius: 14px; box-shadow: var(--card-shadow); border: 1px solid var(--border); }
+
+  /* ================= ШАПКА ================= */
+  .site-head { background: #fff; border-bottom: 1px solid var(--border); transition: box-shadow .3s var(--ease); }
+  .site-head.scrolled { box-shadow: 0 8px 24px rgba(15,23,42,.14); }
+  @media (min-width: 768px) { .site-head { position: sticky; top: 0; z-index: 40; } }
+  .site-head .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; padding-top: 14px; padding-bottom: 14px; flex-wrap: wrap; }
+  .logo { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; color: var(--primary); line-height: 1.1; }
+  .logo span { color: var(--accent); }
+  .slogan { font-size: .8rem; color: var(--muted); }
+  .head-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .head-phone { font-weight: 700; color: var(--text); text-decoration: none; white-space: nowrap; }
+  .btn-call { border: 1.5px solid var(--primary); background: #fff; color: var(--primary); font-weight: 600; font-size: .9rem; padding: 9px 16px; border-radius: 10px; transition: all .15s; }
+  .btn-call:hover { background: var(--primary); color: #fff; }
+  @media (max-width: 520px) {
+    .site-head .wrap { flex-direction: column; align-items: flex-start; }
+    .head-right { width: 100%; justify-content: space-between; }
+  }
+
+  /* ================= ЗАГОЛОВОК И СЧЁТЧИК ================= */
+  .hero { text-align: center; padding: 34px 16px 14px; }
+  .hero h1 { margin: 0 0 10px; font-size: clamp(1.6rem, 5.5vw, 2.6rem); line-height: 1.15; font-weight: 800; letter-spacing: -.02em; }
+  .hero p { margin: 0 auto; max-width: 560px; color: var(--muted); font-size: 1.05rem; }
+  .counter { text-align: center; color: var(--muted); font-size: 1.08rem; padding: 6px 16px 20px; }
+  .counter b { color: var(--primary); font-weight: 800; font-variant-numeric: tabular-nums; }
+
+  /* ================= КАЛЬКУЛЯТОР ================= */
+  .calc { padding: 22px 18px 24px; position: relative; scroll-margin-top: 12px; }
+  @media (min-width: 768px) { .calc { padding: 28px 32px 30px; scroll-margin-top: 84px; } }
+  .reset { position: absolute; top: 8px; right: 12px; border: 0; background: none; color: #A3AEBF; font-size: .68rem; padding: 4px 6px; opacity: .8; }
+  .reset:hover { color: var(--error); text-decoration: underline; opacity: 1; }
+
+  /* Прогресс-бар */
+  .progress { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); list-style: none; margin: 8px 0 26px; padding: 0; }
+  .track { position: absolute; top: 17px; left: 12.5%; right: 12.5%; height: 3px; background: var(--border); border-radius: 2px; }
+  .fill { height: 100%; width: 0; background: var(--primary); border-radius: 2px; transition: width .6s var(--spring); }
+  .progress li { position: relative; text-align: center; font-size: .78rem; color: var(--muted); }
+  .progress button { all: unset; display: block; width: 100%; cursor: default; }
+  .progress button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+  .progress li.done button { cursor: pointer; }
+  .dot { display: grid; place-items: center; width: 36px; height: 36px; margin: 0 auto 6px; border-radius: 50%; background: #fff; border: 2px solid var(--border); font-weight: 700; transition: all .3s; position: relative; }
+  .dot .chk { display: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .progress li.done .dot .num { display: none; }
+  .progress li.done .dot .chk { display: block; }
+  .progress li.active .dot { border-color: var(--primary); background: var(--primary); color: #fff; box-shadow: 0 0 0 5px rgba(var(--primary-rgb), .15); }
+  .progress li.done .dot { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
+  .progress li.active { color: var(--text); font-weight: 700; }
+  .progress li.done:hover { color: var(--primary); }
+
+  /* Шаги: переходы управляются классами .leaving / .entering (см. showStep) */
+  .step { display: none; }
+  .step.active { display: block; }
+  .step h2 { margin: 0 0 16px; font-size: 1.35rem; letter-spacing: -.01em; }
+  .step h3 { margin: 22px 0 6px; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+
+  /* Вкладки комнат */
+  .tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--border); margin-bottom: 20px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+  .tab { flex: none; display: flex; align-items: center; gap: 6px; padding: 10px 14px; border: 0; border-bottom: 3px solid transparent; margin-bottom: -1px; background: none; color: var(--muted); font-weight: 600; white-space: nowrap; transition: color .2s, border-color .2s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+  .tab .x { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 0; background: none; font-size: 1.1rem; line-height: 1; color: var(--muted); }
+  .tab .x:hover { background: #FEE2E2; color: var(--error); }
+  .tab.add { color: var(--primary); }
+
+  /* Поля */
+  .field { margin-bottom: 22px; }
+  .label { display: block; font-weight: 600; margin-bottom: 8px; }
+  .hint { font-size: .85rem; color: var(--muted); margin-top: 6px; }
+  .err { color: var(--error); font-size: .85rem; min-height: 1.2em; margin-top: 4px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; }
+  @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* Тип помещения: горизонтальная полоса карточек 64×64 */
+  .rtypes { display: flex; gap: 8px; overflow-x: auto; padding: 6px 2px 10px; margin: -6px -2px 0; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+  .rtype { all: unset; box-sizing: border-box; flex: none; width: 64px; height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; border: 2px solid var(--border); border-radius: 12px; background: #fff; transition: all .25s var(--ease); }
+  .rtype .ico { font-size: 1.5rem; line-height: 1.1; }
+  .rtype .nm { font-size: .66rem; color: var(--muted); line-height: 1.1; }
+  .rtype:hover { border-color: #94A3B8; transform: translateY(-4px); box-shadow: 0 8px 18px rgba(15,23,42,.12); }
+  .rtype:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .rtype.sel { border-color: var(--primary); background: var(--primary-soft); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .15); }
+  .rtype.sel .nm { color: var(--primary); font-weight: 700; }
+
+  /* Карточки фактур */
+  .textures { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media (min-width: 1024px) { .textures { grid-template-columns: repeat(4, 1fr); } }
+  .tex { all: unset; box-sizing: border-box; cursor: pointer; border: 2px solid var(--border); border-radius: 12px; overflow: hidden; background: #fff; transition: all .25s var(--ease); }
+  .tex:hover { border-color: #94A3B8; transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 26px rgba(15,23,42,.14); }
+  .tex:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .tex.sel { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .15); }
+  .tex-img { height: 84px; position: relative; }
+  .tex-body { padding: 10px 12px 12px; }
+  .tex-name { font-weight: 700; display: block; }
+  .tex-price { font-size: .82rem; color: var(--muted); }
+  .tex.sel .tex-name::after { content: " ✓"; color: var(--primary); }
+  /* CSS-имитация фактур */
+  .t-matovyj { background: linear-gradient(145deg, #E7EAEE 0%, #D3D8DF 100%); }
+  .t-glyancevyj { background: linear-gradient(115deg, #DCE6F5 0%, #F8FBFF 28%, #FFFFFF 33%, #BFD0E8 40%, #DCE6F5 70%, #A9BEDC 100%); }
+  .t-satinovyj { background: linear-gradient(120deg, #F1EEE8 0%, #E3DDD2 30%, #F6F3EE 55%, #DDD6C9 80%, #EDE9E1 100%); }
+  .t-tkanevyj { background-color: #E9E5DD;
+    background-image: repeating-linear-gradient(0deg, rgba(0,0,0,.07) 0 1px, transparent 1px 4px),
+                      repeating-linear-gradient(90deg, rgba(0,0,0,.07) 0 1px, transparent 1px 4px),
+                      repeating-linear-gradient(45deg, rgba(255,255,255,.35) 0 2px, transparent 2px 6px); }
+
+  /* Сегментный переключатель */
+  .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; background: var(--primary-soft); padding: 5px; border-radius: 12px; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label { text-align: center; padding: 12px 8px; border-radius: 9px; cursor: pointer; font-weight: 600; color: var(--muted); transition: background .25s var(--ease), color .25s var(--ease), box-shadow .25s, transform .15s; }
+  .seg label:active { transform: scale(.97); }
+  .seg input:checked + label { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(var(--primary-rgb), .3); }
+  .seg input:focus-visible + label { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .surcharge { color: var(--accent-dark); font-weight: 600; font-size: .9rem; margin-top: 8px; min-height: 1.4em; }
+
+  /* Числовое поле −/+ */
+  .stepper { display: flex; align-items: stretch; height: 52px; max-width: 240px; border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; background: #fff; }
+  .stepper.invalid { border-color: var(--error); }
+  .stepper:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .15); }
+  .stepper button { flex: none; width: 52px; min-height: 48px; border: 0; background: var(--primary-soft); color: var(--primary); font-size: 1.5rem; font-weight: 700; touch-action: manipulation; user-select: none; transition: background .15s, transform .12s var(--ease); }
+  .stepper button:hover { background: #DDE5FF; }
+  .stepper button:active { background: #C7D4FF; transform: scale(.85); }
+  .stepper input { flex: 1; min-width: 0; width: 100%; border: 0; text-align: center; font: inherit; font-size: 1.15rem; font-weight: 700; color: var(--text); background: #fff; -moz-appearance: textfield; }
+  .stepper input:focus { outline: none; }
+
+  /* Текстовые поля с плавающей подписью (floating label) */
+  .in { width: 100%; min-height: 52px; padding: 12px 14px; font: inherit; color: var(--text); border: 1.5px solid var(--border); border-radius: 12px; background: #fff; transition: border-color .15s, box-shadow .15s; }
+  textarea.in { min-height: 100px; resize: vertical; }
+  .in:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .15); }
+  .in.invalid { border-color: var(--error); }
+  .float { position: relative; }
+  .float .in { padding-top: 24px; padding-bottom: 6px; }
+  .float .in::placeholder { color: transparent; }
+  .float label { position: absolute; left: 15px; top: 14px; color: var(--muted); pointer-events: none; transform-origin: left top; transition: transform .2s var(--ease), color .2s; }
+  .float .in:focus + label, .float .in:not(:placeholder-shown) + label { transform: translateY(-9px) scale(.75); }
+  .float .in:focus + label { color: var(--primary); font-weight: 600; }
+
+  /* Услуги */
+  .svc { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .svc:last-of-type { border-bottom: 0; }
+  .svc-info { flex: 1 1 220px; min-width: 0; }
+  .svc-name { font-weight: 600; }
+  .svc-price { font-size: .85rem; color: var(--muted); }
+  .svc-ctl { display: flex; align-items: center; gap: 8px; }
+  .svc-ctl .stepper { width: 188px; }
+  .unit { width: 34px; font-size: .85rem; color: var(--muted); }
+  .q { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-left: 6px; padding: 0; border-radius: 50%; border: 0; background: var(--primary-soft); color: var(--primary); font-size: .78rem; font-weight: 800; vertical-align: middle; transition: background .2s, color .2s; }
+  .q:hover, .q[aria-expanded=true] { background: var(--primary); color: #fff; }
+  /* Строка с активной подсказкой поднимается над соседними строками (иначе тултип уходит под них) */
+  .svc:has(.q:hover), .svc:has(.q:focus-visible), .svc.open { z-index: 10; }
+  /* Подсказка: на сенсорных экранах — аккордеон (раскрывается по высоте) */
+  .tip { flex-basis: 100%; order: 3; max-height: 0; overflow: hidden; opacity: 0; margin-top: -10px; padding: 0 12px; background: var(--primary-soft); border-radius: 10px; font-size: .88rem; transition: max-height .3s ease, opacity .3s ease, padding .3s ease, margin .3s ease; }
+  .svc.open .tip { max-height: 200px; opacity: 1; margin-top: 0; padding: 10px 12px; }
+  /* На десктопе — всплывающая подсказка при наведении */
+  @media (hover: hover) {
+    .tip { display: none; position: absolute; left: 0; top: 100%; z-index: 6; flex-basis: auto; max-width: 340px; max-height: none; overflow: visible; opacity: 1; margin-top: -6px; padding: 10px 12px; background: #1E293B; color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.2); transition: none; }
+    .svc:has(.q:hover) .tip, .svc:has(.q:focus-visible) .tip, .svc.open .tip { display: block; }
+  }
+
+  /* Сводка по комнатам (шаг 3) */
+  .room-res { margin-bottom: 16px; }
+  .sum-card { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 16px 18px; background: var(--primary-soft); border-radius: 14px; border: 1px solid rgba(var(--primary-rgb), .12); }
+  .sc-room { display: block; font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+  .sc-text { font-weight: 600; line-height: 1.45; min-width: 0; }
+  .sc-sum { font-size: clamp(1.25rem, 5vw, 1.6rem); font-weight: 800; color: var(--primary); white-space: nowrap; }
+  .more-link { all: unset; cursor: pointer; color: var(--primary); font-weight: 600; font-size: .9rem; margin: 10px 4px 0; display: inline-block; }
+  .more-link:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  .more-link:hover { text-decoration: underline; }
+  .details { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s var(--ease); }
+  .details.open { grid-template-rows: 1fr; }
+  .details > div { overflow: hidden; min-height: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: .92rem; margin-top: 8px; }
+  th { text-align: left; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; padding: 6px 6px; border-bottom: 2px solid var(--border); }
+  td { padding: 10px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th:last-child, td:last-child { text-align: right; white-space: nowrap; font-weight: 600; }
+  td.calc { color: var(--muted); }
+  tr.sub td { border-bottom: 0; font-weight: 700; background: var(--primary-soft); }
+  tr.sub td:first-child { border-radius: 8px 0 0 8px; } tr.sub td:last-child { border-radius: 0 8px 8px 0; }
+  @media (max-width: 480px) { table { font-size: .82rem; } td, th { padding: 8px 3px; } }
+  .grand { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px; margin-top: 8px; border-radius: 14px; background: var(--primary); color: #fff; }
+  .grand small { display: block; opacity: .8; font-size: .85rem; font-weight: 400; }
+  .grand .v { font-size: clamp(1.7rem, 7vw, 2.3rem); font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .grand .lbl { font-size: 1.15rem; font-weight: 700; }
+  .perks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0 14px; }
+  .perk { text-align: center; padding: 14px 6px; border: 1px solid var(--border); border-radius: 12px; background: #fff; font-size: .85rem; font-weight: 600; }
+  .perk .ic { display: block; font-size: 1.6rem; margin-bottom: 4px; }
+  .small { font-size: .8rem; color: var(--muted); }
+
+  /* Отзыв */
+  .review { position: relative; margin: 0 0 14px; padding: 20px 20px 16px 52px; background: var(--primary-soft); border: 1px solid rgba(var(--primary-rgb), .15); border-radius: 14px; }
+  .review .rq { position: absolute; left: 14px; top: 2px; font-size: 3.4rem; line-height: 1.1; color: var(--primary); opacity: .35; font-family: Georgia, serif; }
+  .stars { color: var(--accent); letter-spacing: 2px; font-size: 1.1rem; margin-bottom: 6px; }
+  .stars span { display: inline-block; }
+  .review blockquote { margin: 0 0 10px; font-size: .98rem; }
+  .review figcaption { font-size: .85rem; color: var(--muted); }
+  .review figcaption b { color: var(--text); }
+
+  /* Форма заявки */
+  .check { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; font-size: .95rem; }
+  .check input { width: 22px; height: 22px; margin: 1px 0 0; flex: none; accent-color: var(--primary); }
+  .call-alt { text-align: center; margin-top: 12px; color: var(--muted); font-size: .95rem; }
+  .call-alt a { color: var(--primary); font-weight: 700; text-decoration: none; white-space: nowrap; }
+  .call-alt a:hover { text-decoration: underline; }
+
+  /* Кнопки */
+  .nav { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+  .btn { flex: 1 1 140px; min-height: 54px; border: 0; border-radius: 12px; padding: 14px 18px; font-weight: 700; font-size: 1.02rem; background: var(--primary); color: #fff; transition: background .15s, transform .1s, box-shadow .2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+  .btn:hover { background: var(--primary-dark); }
+  .btn:active { transform: scale(.98); }
+  .btn .arr, .btn .arl { display: inline-block; transition: transform .2s ease; }
+  .btn:hover .arr { transform: translateX(4px); }
+  .btn:hover .arl { transform: translateX(-4px); }
+  .btn.ghost { flex: 0 0 auto; background: #fff; color: var(--primary); border: 1.5px solid var(--border); }
+  .btn.ghost:hover { background: var(--primary-soft); border-color: var(--primary); }
+  .btn.accent { background: var(--accent); color: #1E293B; box-shadow: 0 6px 18px rgba(var(--accent-rgb), .4); font-size: 1.1rem; }
+  .btn.accent:hover { background: var(--accent-dark); color: #fff; box-shadow: 0 8px 26px rgba(var(--accent-rgb), .55); }
+  .btn.wa { background: #25D366; color: #fff; }
+  .btn.wa:hover { background: #1EBE5A; }
+  .btn.wa svg { width: 22px; height: 22px; flex: none; }
+  .btn:disabled { opacity: .6; cursor: wait; }
+  .nav .btn.main, .nav .btn.wa { flex: 1 1 190px; }
+  @media (max-width: 400px) { .btn.ghost { padding: 14px 12px; } }
+
+  /* Плавающая плашка итога */
+  .pill { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 -4px 20px rgba(15,23,42,.1); border-top: 1px solid rgba(226,232,240,.8); padding-bottom: env(safe-area-inset-bottom);
+    background: linear-gradient(90deg, rgba(255,255,255,.84) 0%, rgba(255,255,255,.84) 40%, rgba(var(--primary-rgb), .12) 50%, rgba(255,255,255,.84) 60%, rgba(255,255,255,.84) 100%); background-size: 300% 100%; background-position: 100% 0; }
+  .pill .wrap { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 10px; padding-bottom: 10px; }
+  .pill-info { display: flex; flex-direction: column; min-width: 0; }
+  .pill .l { color: var(--muted); font-size: .78rem; line-height: 1.25; }
+  .pill .v { display: inline-block; transform-origin: left center; font-size: 1.4rem; font-weight: 800; color: var(--primary); white-space: nowrap; line-height: 1.2; }
+  @media (min-width: 560px) { .pill-info { flex-direction: row; align-items: baseline; gap: 10px; } .pill .l { font-size: .9rem; } }
+  .pill-btn { flex: none; border: 0; border-radius: 10px; background: var(--accent); color: #1E293B; font-weight: 700; font-size: .85rem; padding: 11px 14px; white-space: nowrap; min-height: 44px; box-shadow: 0 3px 10px rgba(var(--accent-rgb), .35); transition: background .15s, color .15s, transform .1s; }
+  .pill-btn:hover { background: var(--accent-dark); color: #fff; }
+  .pill-btn:active { transform: scale(.97); }
+  .pill.on-lead .pill-btn { display: none; }
+
+  /* Круглая кнопка звонка (только мобильные) */
+  .fab { display: none; position: fixed; right: 16px; bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 35; width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: #fff; place-items: center; box-shadow: 0 6px 18px rgba(var(--primary-rgb), .45); }
+  .fab svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  @media (max-width: 767px) { .fab { display: grid; } }
+
+  /* Модальное окно */
+  .modal { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(15,23,42,.5); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .modal.open { display: flex; }
+  .m-box { background: #fff; border-radius: 18px; padding: 32px 26px 26px; max-width: 420px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.3); }
+  .m-box h3 { margin: 14px 0 8px; font-size: 1.4rem; }
+  .m-box p { margin: 0 0 22px; color: var(--muted); }
+  .m-check { width: 76px; height: 76px; }
+  .m-check circle { fill: #DCFCE7; transform-box: fill-box; transform-origin: center; }
+  .m-check path { fill: none; stroke: var(--ok); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+
+  footer { text-align: center; padding: 28px 16px 8px; color: var(--muted); font-size: .85rem; }
+
+  /* =====================================================================
+     АНИМАЦИИ. Включаются только если пользователь не просил уменьшить движение.
+     Начальные состояния "скрыто" тоже живут только здесь, поэтому при
+     reduced-motion всё просто видно сразу.
+     ===================================================================== */
+  @media (prefers-reduced-motion: no-preference) {
+    /* ---- Переходы между шагами ---- */
+    .step.leaving { animation: stepLeave .25s ease-in forwards; }
+    .step.entering { animation: stepEnter .35s ease-out both; }
+    @keyframes stepLeave { to { opacity: 0; transform: translateY(-12px); } }
+    @keyframes stepEnter { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+    /* ---- Прогресс-бар ---- */
+    .progress li.active .dot { animation: dotPulse .4s var(--ease); }
+    @keyframes dotPulse { 0% { transform: scale(.85); } 60% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    .progress li.done .dot .chk path { stroke-dasharray: 30; stroke-dashoffset: 30; animation: draw .4s .1s ease forwards; }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+
+    /* ---- Карточки фактур и типов помещений ---- */
+    .tex.pop { animation: spring .3s var(--ease); }
+    @keyframes spring { 0% { transform: scale(1); } 33% { transform: scale(.96); } 66% { transform: scale(1.03); } 100% { transform: scale(1); } }
+    .rtype.pop { animation: bounce .35s var(--ease); }
+    @keyframes bounce { 0% { transform: scale(.9); } 55% { transform: scale(1.08); } 100% { transform: scale(1); } }
+
+    /* ---- Степперы: отскок цифры и подсветка ---- */
+    .stepper input.bump-up { animation: bumpUp .32s var(--ease); }
+    .stepper input.bump-down { animation: bumpDown .32s var(--ease); }
+    @keyframes bumpUp { 0% { transform: translateY(0); background: rgba(22,163,74,0); } 25% { transform: translateY(-3px); background: rgba(22,163,74,.22); } 62% { transform: translateY(0); } 100% { background: rgba(22,163,74,0); } }
+    @keyframes bumpDown { 0% { transform: translateY(0); background: rgba(220,38,38,0); } 25% { transform: translateY(-3px); background: rgba(220,38,38,.18); } 62% { transform: translateY(0); } 100% { background: rgba(220,38,38,0); } }
+
+    /* ---- Плавающая плашка ---- */
+    .pill { animation: pillIn .6s .3s var(--ease) both; }
+    @keyframes pillIn { from { transform: translateY(100%); } to { transform: none; } }
+    .pill.shift { animation: pillShift .8s ease; }
+    @keyframes pillShift { from { background-position: 100% 0; } to { background-position: 0 0; } }
+    .pill .v.bump { animation: bumpTotal .25s var(--spring); }
+    @keyframes bumpTotal { from { transform: scale(1.12); } to { transform: scale(1); } }
+
+    /* ---- Вкладки комнат ---- */
+    .tab.enter { transform-origin: left center; animation: tabIn .3s var(--ease); }
+    .tab.leave { transform-origin: left center; animation: tabOut .25s ease-in forwards; pointer-events: none; }
+    @keyframes tabIn { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
+    @keyframes tabOut { to { transform: scaleX(0); opacity: 0; } }
+
+    /* ---- Услуги: каскадное появление ---- */
+    .svc { animation: fadeX .3s ease-out both; animation-delay: calc(var(--i, 0) * 60ms); }
+    @keyframes fadeX { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+
+    /* ---- Шаг 3: сводка, таблица, перки, отзыв ---- */
+    .sum-card { animation: fadeUp .4s ease-out both; animation-delay: calc(var(--i, 0) * 80ms); }
+    .details.open tbody tr { animation: fadeUp .3s ease-out both; animation-delay: calc(var(--i, 0) * 40ms); }
+    .grand { animation: grandIn .4s ease-out both; animation-delay: .15s; }
+    @keyframes grandIn { from { opacity: 0; transform: scale(.95); } to { opacity: 1; transform: none; } }
+    .perk { animation: fadeUp20 .4s ease-out both; animation-delay: calc(.3s + var(--i, 0) * 100ms); }
+    .perk .ic { animation: iconPop .5s ease-out both; animation-delay: calc(.4s + var(--i, 0) * 100ms); }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @keyframes fadeUp20 { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+    @keyframes iconPop { 0% { transform: scale(.5); } 70% { transform: scale(1.15); } 100% { transform: scale(1); } }
+    .review { animation: fadeUp15 .4s ease-out both; animation-delay: 1s; }
+    @keyframes fadeUp15 { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: none; } }
+    .stars span { animation: starOn .4s ease-out both; animation-delay: calc(1.25s + var(--i, 0) * 80ms); }
+    @keyframes starOn { 0% { transform: scale(0); color: var(--muted); } 60% { transform: scale(1.3); } 100% { transform: scale(1); color: var(--accent); } }
+
+    /* ---- Кнопки ---- */
+    .btn.accent#submitBtn { animation: submitPulse 2.5s ease-out infinite; }
+    .btn.accent#submitBtn:hover { animation: none; }
+    @keyframes submitPulse { 0% { box-shadow: 0 6px 18px rgba(var(--accent-rgb), .4), 0 0 0 0 rgba(var(--accent-rgb), 0); } 40% { box-shadow: 0 6px 18px rgba(var(--accent-rgb), .4), 0 0 0 6px rgba(var(--accent-rgb), .4); } 100% { box-shadow: 0 6px 18px rgba(var(--accent-rgb), .4), 0 0 0 16px rgba(var(--accent-rgb), 0); } }
+    .btn.wa { animation: wiggle 5s ease-in-out infinite; }
+    @keyframes wiggle { 0%, 88% { transform: rotate(0); } 91% { transform: rotate(-3deg); } 94% { transform: rotate(3deg); } 97%, 100% { transform: rotate(0); } }
+    .fab { animation: fabPulse 4s ease-out infinite; }
+    @keyframes fabPulse { 0%, 100% { box-shadow: 0 6px 18px rgba(var(--primary-rgb), .45), 0 0 0 0 rgba(var(--primary-rgb), 0); } 8% { box-shadow: 0 6px 18px rgba(var(--primary-rgb), .45), 0 0 0 0 rgba(var(--primary-rgb), .45); } 30% { box-shadow: 0 6px 18px rgba(var(--primary-rgb), .45), 0 0 0 18px rgba(var(--primary-rgb), 0); } }
+
+    /* ---- Подсказки (десктоп) ---- */
+    @media (hover: hover) {
+      .svc:has(.q:hover) .tip, .svc:has(.q:focus-visible) .tip, .svc.open .tip { animation: tipIn .2s ease-out; }
+    }
+    @keyframes tipIn { from { opacity: 0; transform: translateY(-4px) scale(.9); } to { opacity: 1; transform: none; } }
+
+    /* ---- Модальное окно ---- */
+    .modal.open { animation: fadeOnly .3s ease; }
+    @keyframes fadeOnly { from { opacity: 0; } to { opacity: 1; } }
+    .modal.open .m-box { animation: modalPop .45s var(--spring); }
+    @keyframes modalPop { from { opacity: 0; transform: scale(.8) translateY(30px); } to { opacity: 1; transform: none; } }
+    .modal.open .m-check circle { animation: circlePop .35s .15s var(--ease) both; }
+    @keyframes circlePop { 0% { transform: scale(0); } 70% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    .modal.open .m-check path { stroke-dasharray: 50; stroke-dashoffset: 50; animation: draw .5s .45s ease forwards; }
+    .modal.open h3 { animation: fadeUp10 .4s .95s ease-out both; }
+    .modal.open p { animation: fadeUp10 .4s 1.05s ease-out both; }
+    .modal.open .btn { animation: fadeUp10 .4s 1.35s ease-out both; }
+    @keyframes fadeUp10 { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  }
+
+  /* Если пользователь просит убрать анимации — отключаем вообще всё */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+
+  footer a { color: inherit; }
+</style>
+</head>
+<body>
+
+<!-- ================= ШАПКА ================= -->
+<header class="site-head" id="siteHead">
+  <div class="wrap">
+    <div>
+      <div class="logo" id="logo"></div>
+      <div class="slogan" id="slogan"></div>
+    </div>
+    <div class="head-right">
+      <a class="head-phone" id="headPhone" href="#"></a>
+      <button class="btn-call" id="callBtn" type="button"></button>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <h1 id="heroTitle"></h1>
+  <p id="heroSub"></p>
+</section>
+
+<!-- Счётчик с анимацией count-up -->
+<div class="counter" id="counter"><span aria-hidden="true">👥</span> <span id="counterBefore"></span> <b id="counterNum">0</b> <span id="counterAfter"></span></div>
+
+<!-- ================= КАЛЬКУЛЯТОР ================= -->
+<main class="wrap">
+  <div class="card calc" id="calc">
+    <button class="reset" id="resetBtn" type="button"></button>
+
+    <ol class="progress" id="progress"></ol>
+
+    <!-- ШАГ 1: помещение -->
+    <section class="step" data-step="1">
+      <h2 id="h1"></h2>
+      <div class="tabs" id="tabs1"></div>
+      <div id="roomForm"></div>
+      <div class="nav"><button class="btn main" data-next type="button"></button></div>
+    </section>
+
+    <!-- ШАГ 2: освещение и допуслуги -->
+    <section class="step" data-step="2">
+      <h2 id="h2"></h2>
+      <div class="tabs" id="tabs2"></div>
+      <div id="services"></div>
+      <div class="nav"><button class="btn ghost" data-back type="button"></button><button class="btn main" data-next type="button"></button></div>
+    </section>
+
+    <!-- ШАГ 3: итого -->
+    <section class="step" data-step="3">
+      <h2 id="h3"></h2>
+      <div id="result"></div>
+      <div class="perks" id="perks"></div>
+      <figure class="review" id="review">
+        <span class="rq" aria-hidden="true">«</span>
+        <div class="stars" id="stars"></div>
+        <blockquote id="rText"></blockquote>
+        <figcaption><b id="rName"></b> · <span id="rSource"></span></figcaption>
+      </figure>
+      <p class="small" id="disclaimer"></p>
+      <div class="nav">
+        <button class="btn ghost" data-back type="button"></button>
+        <button class="btn main" data-next type="button"></button>
+        <a class="btn wa" id="waBtn" href="#" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/><g transform="translate(6.3 6.3) scale(.48)"><path fill="none" stroke="#25D366" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></g></svg>
+          <span id="waBtnText"></span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ШАГ 4: заявка -->
+    <section class="step" data-step="4" id="leadStep">
+      <h2 id="h4"></h2>
+      <form id="leadForm" novalidate>
+        <div class="field"><div class="float"><input class="in" type="text" id="fName" autocomplete="name" placeholder=" "><label for="fName" id="lName"></label></div><div class="err" id="eName"></div></div>
+        <div class="field"><div class="float"><input class="in" type="tel" id="fPhone" autocomplete="tel" inputmode="tel" placeholder=" "><label for="fPhone" id="lPhone"></label></div><div class="err" id="ePhone"></div></div>
+        <div class="field"><div class="float"><textarea class="in" id="fComment" placeholder=" "></textarea><label for="fComment" id="lComment"></label></div></div>
+        <div class="field"><span class="label" id="lPay"></span><div class="seg" id="payment" role="radiogroup" aria-labelledby="lPay"></div></div>
+        <div class="field"><label class="check"><input type="checkbox" id="fConsent"><span id="consentText"></span></label><div class="err" id="eConsent"></div></div>
+        <button class="btn accent" type="submit" id="submitBtn" style="width:100%"></button>
+        <div class="call-alt" id="callAlt"></div>
+        <div class="call-alt" id="waAlt" style="margin-top:4px"></div>
+        <div class="nav" style="margin-top:18px"><button class="btn ghost" data-back type="button"></button></div>
+      </form>
+    </section>
+  </div>
+</main>
+
+<footer id="footer"></footer>
+
+<!-- Круглая кнопка звонка (только на мобильных) -->
+<a class="fab" id="fab" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a>
+
+<!-- Плавающая плашка с итогом (на всех шагах) -->
+<div class="pill" id="pill"><div class="wrap">
+  <div class="pill-info"><span class="l" id="pillLabel"></span><span class="v" id="pillTotal"></span></div>
+  <button class="pill-btn" id="quickBtn" type="button"></button>
+</div></div>
+
+<!-- Модальное окно после отправки -->
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+  <div class="m-box">
+    <svg class="m-check" viewBox="0 0 76 76" aria-hidden="true"><circle cx="38" cy="38" r="36"/><path d="M22 39 l11 11 l21 -23"/></svg>
+    <h3 id="mTitle"></h3>
+    <p id="mText"></p>
+    <button class="btn" id="mAgain" type="button" style="width:100%"></button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// НАСТРОЙКИ — МЕНЯЙТЕ ПОД СВОЕГО КЛИЕНТА
+// ═══════════════════════════════════════
+// Всё, что нужно поменять при продаже калькулятора, находится в двух
+// объектах ниже: CONFIG (цены, контакты, цвета, лимиты) и TEXTS (тексты).
+// Остальной код (после блока "ЛОГИКА") трогать не нужно.
+
+const CONFIG = {
+  // ---------- Компания ----------
+  companyName: 'ПотолокМастер',          // название (логотип-текст)
+  logoSplit: 7,                           // сколько первых символов названия идут основным цветом, остальные — акцентным ("Потолок" | "Мастер")
+  phone: '+7 (900) 123-45-67',            // телефон для показа
+  phoneRaw: '+79001234567',               // тот же телефон для ссылки tel:
+  whatsappNumber: '79001234567',          // номер WhatsApp: только цифры, с кодом страны, без "+"
+
+  // ---------- Цвета интерфейса ----------
+  colors: {
+    primary: '#1E40AF',   // основной (кнопки, шаги, акценты)
+    accent:  '#F59E0B',   // акцентный (кнопка заявки, логотип)
+    bg:      '#F8FAFC',   // фон страницы
+    text:    '#1E293B',   // цвет текста
+    muted:   '#64748B'    // серый вспомогательный
+  },
+
+  currency: '₽',
+
+  // ---------- Доверие ----------
+  counter: 1247,                          // число в строке "Уже N человек рассчитали..."
+  review: { rating: 5 },                  // рейтинг отзыва (число звёзд, 1–5). Текст отзыва — в TEXTS.review
+
+  // ---------- Типы помещений (на расчёт не влияют, попадают в заявку) ----------
+  roomTypes: [
+    { key: 'living',  icon: '🛋️', name: 'Гостиная' },
+    { key: 'bedroom', icon: '🛏️', name: 'Спальня' },
+    { key: 'kids',    icon: '👶', name: 'Детская' },
+    { key: 'kitchen', icon: '🍳', name: 'Кухня' },
+    { key: 'bath',    icon: '🚿', name: 'Ванная' },
+    { key: 'hallway', icon: '📦', name: 'Коридор' },
+    { key: 'other',   icon: '⚙️', name: 'Другое' }
+  ],
+
+  // ---------- Способы оплаты (названия — в TEXTS.payments) ----------
+  paymentMethods: ['cash', 'card', 'transfer'],
+
+  // ---------- Цены на полотно, руб/м² (white — белое, color — цветное) ----------
+  potolok: {
+    matovyj:    { white: 450, color: 550 },
+    glyancevyj: { white: 550, color: 650 },
+    satinovyj:  { white: 500, color: 600 },
+    tkanevyj:   { white: 750, color: 850 }
+  },
+
+  // ---------- Обработка угла, руб/шт. ----------
+  ugol: 120,
+
+  // ---------- Лимиты полей ----------
+  maxRooms: 8,
+  area:    { min: 1, max: 100, step: 0.5, def: 12 },
+  corners: { min: 3, max: 20,  step: 1,   def: 4 },
+  serviceMax: 999,
+
+  // ---------- Допуслуги ----------
+  // key — уникальный id; group — 'light' (Освещение) или 'extra' (Дополнительно);
+  // price — цена за единицу; unit — единица; step — шаг кнопок +/-; tooltip — подсказка (?)
+  services: [
+    { key: 'spot',      group: 'light', name: 'Точечные светильники',     price: 350, unit: 'шт.',  step: 1,   tooltip: 'Закладная площадка + вырез в полотне. Сам светильник не входит' },
+    { key: 'chandelier',group: 'light', name: 'Люстра потолочная',        price: 500, unit: 'шт.',  step: 1,   tooltip: 'Закладная под люстру + монтаж и подключение' },
+    { key: 'wiring',    group: 'light', name: 'Монтаж электропроводки',   price: 300, unit: 'точ.', step: 1,   tooltip: 'Прокладка провода по основному потолку к светильникам' },
+    { key: 'pipe',      group: 'extra', name: 'Обход трубы',              price: 350, unit: 'шт.',  step: 1,   tooltip: 'Окантовка труб отопления, уходящих в потолок' },
+    { key: 'cornice',   group: 'extra', name: 'Потолочный карниз',        price: 700, unit: 'шт.',  step: 1,   tooltip: 'Закладная из бруса для крепления карниза для штор' },
+    { key: 'tape',      group: 'extra', name: 'Маскировочная лента',      price: 120, unit: 'м.п.', step: 0.5, tooltip: 'Декоративная вставка, закрывает щель между потолком и стеной' },
+    { key: 'sound',     group: 'extra', name: 'Звукоизоляция',            price: 800, unit: 'м²',   step: 0.5, tooltip: 'Монтаж шумоизоляции на основной потолок' }
+  ]
+};
+
+const TEXTS = {
+  // ---------- Шапка и заголовок ----------
+  slogan: 'Натяжные потолки с гарантией 15 лет',
+  callBtn: 'Заказать звонок',
+  callFab: 'Позвонить',
+  heroTitle: 'Рассчитайте стоимость потолка за 2 минуты',
+  heroSub: 'Укажите параметры помещения — мы покажем точную стоимость с установкой',
+  reset: '↺ Сбросить всё',
+  resetConfirm: 'Сбросить все введённые данные?',
+  counter: { before: 'Уже', after: 'человек рассчитали стоимость потолка' },
+
+  // ---------- SEO / Open Graph ----------
+  pageTitle: 'Калькулятор натяжных потолков — ' + CONFIG.companyName,
+  ogDescription: 'Рассчитайте стоимость потолка с установкой за 2 минуты. Бесплатный замер, гарантия 15 лет.',
+
+  // ---------- Шаги ----------
+  stepNames: ['Помещение', 'Услуги', 'Итого', 'Заявка'],
+  next: 'Далее →', back: '← Назад', change: '← Изменить', toLead: 'Оставить заявку →',
+  quick: 'Узнать точную цену',
+  h1: 'Параметры помещения',
+  h2: 'Освещение и допуслуги',
+  h3: 'Итого',
+  h4: 'Оставьте заявку — мы перезвоним за 15 минут',
+
+  // ---------- Шаг 1 ----------
+  roomName: n => 'Комната ' + n,
+  addRoom: '+ Добавить комнату',
+  removeRoom: 'Удалить комнату',
+  roomType: 'Тип помещения',
+  texture: 'Фактура потолка',
+  textureNames: { matovyj: 'Матовый', glyancevyj: 'Глянцевый', satinovyj: 'Сатиновый', tkanevyj: 'Тканевый' },
+  from: 'от',
+  color: 'Цвет полотна',
+  colorNames: { white: 'Белый', color: 'Цветной' },
+  colorNamesLower: { white: 'белый', color: 'цветной' },
+  surcharge: n => '+' + n + ' ₽/м² к стоимости',
+  area: 'Площадь помещения (м²)',
+  areaHint: 'Не знаете площадь? Умножьте длину комнаты на ширину',
+  corners: 'Количество углов (шт.)',
+  errArea: (a, b) => 'Площадь — от ' + a + ' до ' + b + ' м²',
+  errCorners: (a, b) => 'Углов — от ' + a + ' до ' + b,
+
+  // ---------- Шаг 2 ----------
+  groups: { light: 'Освещение', extra: 'Дополнительно' },
+  appliesTo: 'Услуги применяются к выбранной комнате',
+  tipLabel: 'Подсказка',
+  less: 'Меньше', more: 'Больше',
+
+  // ---------- Шаг 3 ----------
+  detailsShow: 'Подробная разбивка ▼',
+  detailsHide: 'Скрыть разбивку ▲',
+  thService: 'Услуга', thCalc: 'Расчёт', thSum: 'Сумма',
+  rowCorners: 'Обработка углов',
+  subtotal: 'Подитог',
+  total: 'Итого',
+  totalRooms: n => 'Потолки в ' + n + ' ' + (n % 10 === 1 && n % 100 !== 11 ? 'комнате' : 'комнатах'),
+  // Склонения для сводки: [1, 2-4, 5+]
+  plural: {
+    corner: ['угол', 'угла', 'углов'],
+    spot: ['светильник', 'светильника', 'светильников'],
+    chandelier: ['люстра', 'люстры', 'люстр']
+  },
+  perks: [
+    { icon: '🛡️', text: 'Гарантия 15 лет' },
+    { icon: '📐', text: 'Бесплатный замер' },
+    { icon: '💳', text: 'Оплата после установки' }
+  ],
+  review: {
+    text: 'Заказали потолки в 3 комнаты. Ребята приехали, замерили, через 2 дня всё было готово. Цена вышла ровно как на сайте.',
+    name: 'Анна К.',
+    source: 'Отзыв с Яндекс Карт'
+  },
+  ratingLabel: n => 'Рейтинг: ' + n + ' из 5',
+  disclaimer: 'Расчёт является предварительным. Точная стоимость определяется после замера.',
+
+  // ---------- WhatsApp ----------
+  waButton: 'Написать в WhatsApp',
+  waAlt: 'Или напишите в',
+  waName: 'WhatsApp',
+  wa: {
+    intro: 'Здравствуйте! Рассчитал потолок на сайте:',
+    total: sum => 'Итого: ' + sum,
+    outro: 'Хочу уточнить детали.'
+  },
+
+  // ---------- Шаг 4 ----------
+  fName: 'Ваше имя',
+  fPhone: 'Ваш телефон',
+  fComment: 'Адрес, пожелания, удобное время для звонка',
+  fPayment: 'Способ оплаты',
+  payments: { cash: 'Наличные', card: 'Карта', transfer: 'Переводом' },
+  consent: 'Согласен на обработку персональных данных',
+  submit: 'Отправить заявку',
+  callAlt: 'Или позвоните нам:',
+  errName: 'Введите ваше имя',
+  errPhone: 'Введите номер телефона полностью',
+  errConsent: 'Нужно согласие на обработку данных',
+
+  // ---------- Плашка, модальное окно, подвал ----------
+  pill: 'Предварительная стоимость:',
+  modalTitle: name => 'Спасибо, ' + name + '!',
+  modalText: 'Мы получили вашу заявку и перезвоним в течение 15 минут.',
+  modalAgain: 'Рассчитать ещё раз',
+  footer: '© ' + new Date().getFullYear() + ' ' + CONFIG.companyName + '. Натяжные потолки под ключ.'
+};
+
+// ═══════════════════════════════════════
+// ЛОГИКА — ниже менять ничего не нужно
+// ═══════════════════════════════════════
+
+const TOTAL_STEPS = 4;
+
+/* ---------- Состояние ---------- */
+let rooms = [];       // массив комнат: у каждой свои параметры и допуслуги
+let current = 0;      // индекс выбранной комнаты
+let step = 1;         // текущий шаг
+let maxStep = 1;      // самый дальний достигнутый шаг
+let lead = {};        // данные формы заявки
+let justAdded = -1;   // индекс только что добавленной вкладки (для анимации)
+let tabBusy = false;  // идёт анимация удаления вкладки
+
+// Новая комната со значениями по умолчанию
+function newRoom() {
+  return { roomType: CONFIG.roomTypes[0].key, texture: 'matovyj', color: 'white', area: CONFIG.area.def, corners: CONFIG.corners.def, services: {} };
+}
+function resetState() {
+  rooms = [newRoom()]; current = 0; step = 1; maxStep = 1;
+  lead = { name: '', phone: '', comment: '', payment: CONFIG.paymentMethods[0], consent: false };
+}
+
+/* ---------- Утилиты ---------- */
+const $ = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString('ru-RU') + ' ' + CONFIG.currency;
+const num = n => (Math.round(n * 100) / 100).toLocaleString('ru-RU');
+const round2 = v => Math.round(v * 100) / 100;
+const svcByKey = k => CONFIG.services.find(s => s.key === k);
+const roomTypeOf = r => CONFIG.roomTypes.find(t => t.key === r.roomType) || CONFIG.roomTypes[0];
+// Экранирование для вставки в innerHTML
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+// Стрелки в тексте кнопок оборачиваем в span, чтобы двигать их при наведении
+const arrows = t => esc(t).replace('→', '<span class="arr">→</span>').replace('←', '<span class="arl">←</span>');
+// Склонение числительных
+function plural(n, f) {
+  if (!Number.isInteger(n)) return f[1];
+  const a = n % 10, b = n % 100;
+  if (a === 1 && b !== 11) return f[0];
+  if (a >= 2 && a <= 4 && (b < 10 || b >= 20)) return f[1];
+  return f[2];
+}
+// Можно ли проигрывать анимации (учитываем системную настройку)
+const motionOK = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+// Перезапуск CSS-анимации через класс
+function popAnim(el, cls, others) {
+  if (!el) return;
+  (others || []).forEach(c => el.classList.remove(c));
+  el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+}
+// Анимация числа от from до to (easeOutExpo)
+function countUp(el, to, dur, format, from) {
+  from = from || 0;
+  if (el._raf) cancelAnimationFrame(el._raf);
+  if (!motionOK()) { el.textContent = format(to); return; }
+  const t0 = performance.now();
+  const ease = t => t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
+  (function tick(now) {
+    const p = Math.min(1, (now - t0) / dur);
+    el.textContent = format(from + (to - from) * ease(p));
+    if (p < 1) el._raf = requestAnimationFrame(tick);
+  })(t0);
+}
+
+/* =====================================================================
+   РАСЧЁТ
+   ===================================================================== */
+// Расчёт одной комнаты: строки таблицы (нулевые не включаем) и подитог
+function calcRoom(r) {
+  const price = CONFIG.potolok[r.texture][r.color];
+  const lines = [
+    { name: TEXTS.textureNames[r.texture] + ' потолок, ' + TEXTS.colorNamesLower[r.color], qty: r.area, unit: 'м²', price, sum: r.area * price },
+    { name: TEXTS.rowCorners, qty: r.corners, unit: 'шт.', price: CONFIG.ugol, sum: r.corners * CONFIG.ugol }
+  ];
+  CONFIG.services.forEach(s => {
+    const q = r.services[s.key] || 0;
+    if (q > 0) lines.push({ name: s.name, qty: q, unit: s.unit, price: s.price, sum: q * s.price });
+  });
+  return { lines, subtotal: lines.reduce((a, l) => a + l.sum, 0) };
+}
+function calcAll() {
+  const perRoom = rooms.map(calcRoom);
+  return { perRoom, total: perRoom.reduce((a, r) => a + r.subtotal, 0) };
+}
+
+/* =====================================================================
+   ОФОРМЛЕНИЕ И ТЕКСТЫ
+   ===================================================================== */
+function applyTheme() {
+  const c = CONFIG.colors, s = document.documentElement.style;
+  s.setProperty('--primary', c.primary); s.setProperty('--primary-rgb', hexToRgb(c.primary));
+  s.setProperty('--primary-dark', shade(c.primary, -0.18));
+  s.setProperty('--primary-soft', c.primary + '12');
+  s.setProperty('--accent', c.accent); s.setProperty('--accent-rgb', hexToRgb(c.accent));
+  s.setProperty('--accent-dark', shade(c.accent, -0.15));
+  s.setProperty('--bg', c.bg); s.setProperty('--text', c.text); s.setProperty('--muted', c.muted);
+}
+function hexToRgb(hex) { const n = parseInt(hex.replace('#', ''), 16); return [n >> 16, (n >> 8) & 255, n & 255].join(', '); }
+// Затемнение HEX-цвета (amount от -1 до 1)
+function shade(hex, amount) {
+  const n = parseInt(hex.replace('#', ''), 16);
+  const f = c => Math.max(0, Math.min(255, Math.round(c + c * amount)));
+  return '#' + [f(n >> 16), f((n >> 8) & 255), f(n & 255)].map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+function applyTexts() {
+  // SEO и Open Graph
+  document.title = TEXTS.pageTitle;
+  document.querySelector('meta[property="og:title"]').content = TEXTS.pageTitle;
+  document.querySelector('meta[property="og:description"]').content = TEXTS.ogDescription;
+  document.querySelector('meta[name="description"]').content = TEXTS.ogDescription;
+
+  // Логотип: первые logoSplit символов — основной цвет, остальное — акцентный
+  const nm = CONFIG.companyName;
+  $('logo').innerHTML = esc(nm.slice(0, CONFIG.logoSplit)) + '<span>' + esc(nm.slice(CONFIG.logoSplit)) + '</span>';
+  $('slogan').textContent = TEXTS.slogan;
+  $('headPhone').textContent = CONFIG.phone; $('headPhone').href = 'tel:' + CONFIG.phoneRaw;
+  $('fab').href = 'tel:' + CONFIG.phoneRaw; $('fab').setAttribute('aria-label', TEXTS.callFab + ' ' + CONFIG.phone);
+  $('callBtn').textContent = TEXTS.callBtn;
+  $('heroTitle').textContent = TEXTS.heroTitle; $('heroSub').textContent = TEXTS.heroSub;
+  $('counterBefore').textContent = TEXTS.counter.before; $('counterAfter').textContent = TEXTS.counter.after;
+  $('resetBtn').textContent = TEXTS.reset;
+  ['h1', 'h2', 'h3', 'h4'].forEach(id => $(id).textContent = TEXTS[id]);
+
+  // Перки (с индексом для каскадной анимации)
+  $('perks').innerHTML = TEXTS.perks.map((p, i) => `<div class="perk" style="--i:${i}"><span class="ic">${p.icon}</span>${esc(p.text)}</div>`).join('');
+  // Отзыв
+  const rating = Math.max(0, Math.min(5, CONFIG.review.rating));
+  $('stars').innerHTML = Array.from({ length: rating }, (_, i) => `<span style="--i:${i}">★</span>`).join('');
+  $('stars').setAttribute('role', 'img'); $('stars').setAttribute('aria-label', TEXTS.ratingLabel(rating));
+  $('rText').textContent = TEXTS.review.text; $('rName').textContent = TEXTS.review.name; $('rSource').textContent = TEXTS.review.source;
+
+  $('disclaimer').textContent = TEXTS.disclaimer;
+  $('lName').textContent = TEXTS.fName; $('lPhone').textContent = TEXTS.fPhone; $('lComment').textContent = TEXTS.fComment;
+  $('lPay').textContent = TEXTS.fPayment;
+  $('payment').innerHTML = CONFIG.paymentMethods.map(k =>
+    `<input type="radio" name="pay" id="pay_${k}" value="${k}"><label for="pay_${k}">${esc(TEXTS.payments[k])}</label>`).join('');
+  $('consentText').textContent = TEXTS.consent;
+  $('submitBtn').textContent = TEXTS.submit;
+  $('callAlt').innerHTML = esc(TEXTS.callAlt) + ' <a href="tel:' + CONFIG.phoneRaw + '">' + esc(CONFIG.phone) + '</a>';
+  $('waAlt').innerHTML = esc(TEXTS.waAlt) + ' <a id="waLink" href="#" target="_blank" rel="noopener">' + esc(TEXTS.waName) + '</a>';
+  $('waBtnText').textContent = TEXTS.waButton;
+  $('pillLabel').textContent = TEXTS.pill; $('quickBtn').textContent = TEXTS.quick;
+  $('mAgain').textContent = TEXTS.modalAgain;
+  $('footer').textContent = TEXTS.footer;
+  document.querySelectorAll('[data-back]').forEach(b => {
+    b.innerHTML = arrows(+b.closest('.step').dataset.step === 3 ? TEXTS.change : TEXTS.back);
+  });
+  document.querySelectorAll('[data-next]').forEach(b => {
+    b.innerHTML = arrows(+b.closest('.step').dataset.step === 3 ? TEXTS.toLead : TEXTS.next);
+  });
+}
+
+/* =====================================================================
+   ПРОГРЕСС-БАР (создаётся один раз, дальше обновляются только классы —
+   так линия заполнения плавно анимируется)
+   ===================================================================== */
+function buildProgress() {
+  $('progress').innerHTML = '<div class="track"><div class="fill" id="fill"></div></div>' +
+    TEXTS.stepNames.map((n, i) =>
+      `<li id="pg${i + 1}"><button type="button" data-goto="${i + 1}" aria-label="Шаг ${i + 1}: ${n}">` +
+      `<span class="dot"><span class="num">${i + 1}</span><svg class="chk" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>${n}</button></li>`).join('');
+}
+function updateProgress() {
+  for (let s = 1; s <= TOTAL_STEPS; s++) {
+    const li = $('pg' + s);
+    li.classList.toggle('active', s === step);
+    li.classList.toggle('done', s < step);
+    li.querySelector('button').tabIndex = s < step ? 0 : -1;
+    if (s === step) li.querySelector('button').setAttribute('aria-current', 'step'); else li.querySelector('button').removeAttribute('aria-current');
+  }
+  $('fill').style.width = ((step - 1) / (TOTAL_STEPS - 1) * 100) + '%';
+}
+
+/* =====================================================================
+   ОТРИСОВКА ШАГОВ
+   ===================================================================== */
+// Вкладки комнат. editable=true — шаг 1 (можно добавлять/удалять)
+function renderTabs(editable) {
+  const html = rooms.map((r, i) =>
+    `<button class="tab ${i === current ? 'active' : ''} ${i === justAdded ? 'enter' : ''}" type="button" data-room="${i}">${TEXTS.roomName(i + 1)}` +
+    (editable && rooms.length > 1 ? `<span class="x" role="button" tabindex="0" data-del="${i}" aria-label="${TEXTS.removeRoom} ${i + 1}">×</span>` : '') +
+    `</button>`).join('') +
+    (editable && rooms.length < CONFIG.maxRooms ? `<button class="tab add" type="button" id="addRoom">${TEXTS.addRoom}</button>` : '');
+  justAdded = -1;
+  $('tabs1').innerHTML = editable ? html : '';
+  $('tabs2').innerHTML = editable ? '' : html;
+}
+
+// Поле с кнопками −/+
+function stepperHTML(id, value, key) {
+  return `<div class="stepper" id="st_${id}"><button type="button" data-dec="${key}" aria-label="${TEXTS.less}">−</button>` +
+    `<input type="text" inputmode="decimal" id="${id}" data-key="${key}" value="${value}"><button type="button" data-inc="${key}" aria-label="${TEXTS.more}">+</button></div>`;
+}
+
+// Форма комнаты (шаг 1)
+function renderRoomForm() {
+  const r = rooms[current];
+  const types = CONFIG.roomTypes.map(t =>
+    `<button type="button" class="rtype ${t.key === r.roomType ? 'sel' : ''}" data-rtype="${t.key}" aria-pressed="${t.key === r.roomType}">` +
+    `<span class="ico" aria-hidden="true">${t.icon}</span><span class="nm">${esc(t.name)}</span></button>`).join('');
+  const cards = Object.keys(CONFIG.potolok).map(k =>
+    `<button type="button" class="tex ${k === r.texture ? 'sel' : ''}" data-tex="${k}" aria-pressed="${k === r.texture}">` +
+    `<div class="tex-img t-${k}"></div><div class="tex-body"><span class="tex-name">${TEXTS.textureNames[k]}</span>` +
+    `<span class="tex-price">${TEXTS.from} ${CONFIG.potolok[k].white} ${CONFIG.currency}/м²</span></div></button>`).join('');
+  $('roomForm').innerHTML = `
+    <div class="field"><span class="label">${TEXTS.roomType}</span><div class="rtypes" role="group" aria-label="${TEXTS.roomType}">${types}</div></div>
+    <div class="field"><span class="label">${TEXTS.texture}</span><div class="textures" role="group" aria-label="${TEXTS.texture}">${cards}</div></div>
+    <div class="field"><span class="label">${TEXTS.color}</span>
+      <div class="seg">${Object.keys(TEXTS.colorNames).map(k =>
+        `<input type="radio" name="roomColor" id="clr_${k}" value="${k}" ${k === r.color ? 'checked' : ''}><label for="clr_${k}">${TEXTS.colorNames[k]}</label>`).join('')}</div>
+      <div class="surcharge" id="surcharge"></div></div>
+    <div class="grid2">
+      <div class="field"><span class="label">${TEXTS.area}</span>${stepperHTML('area', r.area, 'area')}
+        <div class="hint">${TEXTS.areaHint}</div><div class="err" id="errArea"></div></div>
+      <div class="field"><span class="label">${TEXTS.corners}</span>${stepperHTML('corners', r.corners, 'corners')}
+        <div class="err" id="errCorners"></div></div>
+    </div>`;
+  updateSurcharge(); showRoomErrors();
+}
+function updateSurcharge() {
+  const el = $('surcharge'); if (!el) return;
+  const p = CONFIG.potolok[rooms[current].texture];
+  el.textContent = rooms[current].color === 'color' ? TEXTS.surcharge(p.color - p.white) : '';
+}
+
+// Допуслуги текущей комнаты (шаг 2)
+function renderServices() {
+  const r = rooms[current];
+  let html = `<p class="small" style="margin:-6px 0 0">${TEXTS.appliesTo}</p>`, idx = 0;
+  ['light', 'extra'].forEach(g => {
+    html += `<h3>${TEXTS.groups[g]}</h3>`;
+    CONFIG.services.filter(s => s.group === g).forEach(s => {
+      html += `<div class="svc" data-svc="${s.key}" style="--i:${idx++}">
+        <div class="svc-info"><span class="svc-name">${esc(s.name)}</span>
+          <button class="q" type="button" data-tip="${s.key}" aria-expanded="false" aria-label="${TEXTS.tipLabel}: ${esc(s.name)}">?</button>
+          <div class="svc-price">${s.price} ${CONFIG.currency}/${s.unit}</div></div>
+        <div class="svc-ctl">${stepperHTML('svc_' + s.key, r.services[s.key] || 0, 'svc:' + s.key)}<span class="unit">${s.unit}</span></div>
+        <div class="tip" role="tooltip">${esc(s.tooltip)}</div></div>`;
+    });
+  });
+  $('services').innerHTML = html;
+}
+
+// Краткая сводка комнаты: "🛋️ Гостиная · Матовый, белый · 12 м² · 4 угла · 6 светильников"
+function roomSummary(r) {
+  const t = roomTypeOf(r);
+  const parts = [`${t.icon} ${esc(t.name)}`, `${TEXTS.textureNames[r.texture]}, ${TEXTS.colorNamesLower[r.color]}`,
+                 `${num(r.area)} м²`, `${r.corners} ${plural(r.corners, TEXTS.plural.corner)}`];
+  const spot = r.services.spot || 0, chand = r.services.chandelier || 0;
+  if (spot > 0) parts.push(`${num(spot)} ${plural(spot, TEXTS.plural.spot)}`);
+  if (chand > 0) parts.push(`${num(chand)} ${plural(chand, TEXTS.plural.chandelier)}`);
+  return parts.join(' · ');
+}
+
+// Итог (шаг 3): карточки-сводки + скрытая подробная таблица
+function renderResult() {
+  const c = calcAll();
+  let html = c.perRoom.map((pr, i) =>
+    `<div class="room-res"><div class="sum-card" style="--i:${i}"><div class="sc-text">` +
+    (rooms.length > 1 ? `<span class="sc-room">${TEXTS.roomName(i + 1)}</span>` : '') + roomSummary(rooms[i]) +
+    `</div><div class="sc-sum">${fmt(pr.subtotal)}</div></div>` +
+    `<button class="more-link" type="button" data-details="${i}" aria-expanded="false" aria-controls="det_${i}">${TEXTS.detailsShow}</button>` +
+    `<div class="details" id="det_${i}"><div><table><thead><tr><th>${TEXTS.thService}</th><th>${TEXTS.thCalc}</th><th>${TEXTS.thSum}</th></tr></thead><tbody>` +
+    pr.lines.map((l, k) => `<tr style="--i:${k}"><td>${esc(l.name)}</td><td class="calc">${num(l.qty)} ${l.unit} × ${num(l.price)} ${CONFIG.currency}</td><td>${fmt(l.sum)}</td></tr>`).join('') +
+    `<tr class="sub" style="--i:${pr.lines.length}"><td>${TEXTS.subtotal}</td><td></td><td>${fmt(pr.subtotal)}</td></tr></tbody></table></div></div></div>`).join('');
+  html += `<div class="grand"><div><span class="lbl">${TEXTS.total}</span>` +
+    (rooms.length > 1 ? `<small>${TEXTS.totalRooms(rooms.length)}</small>` : '') + `</div><span class="v" id="grandV">0</span></div>`;
+  $('result').innerHTML = html;
+  countUp($('grandV'), c.total, 800, v => fmt(v));
+}
+
+/* ---------- WhatsApp: ссылка с предзаполненным текстом ---------- */
+function waText() {
+  const c = calcAll();
+  let t = TEXTS.wa.intro + '\n';
+  if (rooms.length === 1) {
+    const r = rooms[0];
+    t += `• ${TEXTS.textureNames[r.texture]}, ${TEXTS.colorNamesLower[r.color]}, ${num(r.area)} м²\n`;
+  } else {
+    rooms.forEach((r, i) => {
+      t += `• ${TEXTS.roomName(i + 1)} (${roomTypeOf(r).name}): ${TEXTS.textureNames[r.texture]}, ${TEXTS.colorNamesLower[r.color]}, ${num(r.area)} м² — ${fmt(c.perRoom[i].subtotal)}\n`;
+    });
+  }
+  t += '• ' + TEXTS.wa.total(fmt(c.total)) + '\n' + TEXTS.wa.outro;
+  return t.replace(/[  ]/g, ' ');
+}
+function updateWhatsApp() {
+  const href = 'https://wa.me/' + CONFIG.whatsappNumber + '?text=' + encodeURIComponent(waText());
+  ['waBtn', 'waLink'].forEach(id => { const a = $(id); if (a) a.href = href; });
+}
+
+// Плашка итога + ссылки WhatsApp — обновляются при любом изменении
+let lastTotal = null;
+function updatePill() {
+  const t = calcAll().total;
+  $('pillTotal').textContent = fmt(t);
+  if (lastTotal !== null && lastTotal !== t) { popAnim($('pillTotal'), 'bump'); popAnim($('pill'), 'shift'); }
+  lastTotal = t;
+  updateWhatsApp();
+}
+
+/* =====================================================================
+   ПЕРЕХОДЫ МЕЖДУ ШАГАМИ
+   Старый шаг уходит (.leaving, 250 мс), пауза 100 мс, новый появляется (.entering, 350 мс)
+   ===================================================================== */
+let stepTimer = null;
+function activateStep(n, cb) {
+  document.querySelectorAll('.step').forEach(el => el.classList.remove('active', 'leaving', 'entering'));
+  const el = document.querySelector('.step[data-step="' + n + '"]');
+  el.classList.add('active');
+  if (motionOK()) { el.classList.add('entering'); setTimeout(() => el.classList.remove('entering'), 400); }
+  if (n === 1) { renderTabs(true); renderRoomForm(); }
+  if (n === 2) { renderTabs(false); renderServices(); }
+  if (n === 3) { renderResult(); updateWhatsApp(); }
+  if (n === 4) { syncLead(); updateWhatsApp(); }
+  if (cb) cb();
+}
+function showStep(n, noScroll, cb) {
+  clearTimeout(stepTimer);
+  step = n; maxStep = Math.max(maxStep, n);
+  updateProgress(); updatePill();
+  $('pill').classList.toggle('on-lead', n === 4);   // на шаге заявки кнопка "Узнать точную цену" не нужна
+  const prev = document.querySelector('.step.active');
+  if (prev && +prev.dataset.step !== n && motionOK()) {
+    prev.classList.remove('entering'); prev.classList.add('leaving');
+    stepTimer = setTimeout(() => activateStep(n, cb), 350);
+  } else {
+    activateStep(n, cb);
+  }
+  if (!noScroll) $('calc').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* =====================================================================
+   ВАЛИДАЦИЯ
+   ===================================================================== */
+function roomErrors(r) {
+  const e = {}, A = CONFIG.area, C = CONFIG.corners;
+  if (!(r.area >= A.min && r.area <= A.max)) e.area = TEXTS.errArea(A.min, A.max);
+  if (!(r.corners >= C.min && r.corners <= C.max) || !Number.isInteger(r.corners)) e.corners = TEXTS.errCorners(C.min, C.max);
+  return e;
+}
+function showRoomErrors() {
+  const e = roomErrors(rooms[current]);
+  [['area', 'Area'], ['corners', 'Corners']].forEach(([k, K]) => {
+    const box = $('st_' + k); if (!box) return;
+    box.classList.toggle('invalid', !!e[k]); $('err' + K).textContent = e[k] || '';
+  });
+}
+// Индекс первой комнаты с ошибкой или -1
+const firstInvalidRoom = () => rooms.findIndex(r => Object.keys(roomErrors(r)).length > 0);
+
+// Можно ли покинуть шаг s
+function validateStep(s) {
+  if (s === 1) {
+    const i = firstInvalidRoom();
+    if (i >= 0) { current = i; renderTabs(true); renderRoomForm(); return false; }
+  }
+  if (s === 4) return validateLead();
+  return true;
+}
+function validateLead() {
+  const nameOk = lead.name.trim().length >= 2;
+  const phoneOk = lead.phone.replace(/\D/g, '').length === 11;
+  $('fName').classList.toggle('invalid', !nameOk); $('eName').textContent = nameOk ? '' : TEXTS.errName;
+  $('fPhone').classList.toggle('invalid', !phoneOk); $('ePhone').textContent = phoneOk ? '' : TEXTS.errPhone;
+  $('eConsent').textContent = lead.consent ? '' : TEXTS.errConsent;
+  return nameOk && phoneOk && lead.consent;
+}
+
+/* =====================================================================
+   ЧИСЛОВЫЕ ПОЛЯ
+   ===================================================================== */
+// Ключи: 'area', 'corners', 'svc:<key>'
+function limits(key) {
+  if (key === 'area') return CONFIG.area;
+  if (key === 'corners') return CONFIG.corners;
+  return { min: 0, max: CONFIG.serviceMax, step: svcByKey(key.slice(4)).step };
+}
+function getValue(key) {
+  const r = rooms[current];
+  return key === 'area' || key === 'corners' ? r[key] : (r.services[key.slice(4)] || 0);
+}
+function setValue(key, v) {
+  const r = rooms[current];
+  if (key === 'area' || key === 'corners') r[key] = v; else r.services[key.slice(4)] = v;
+}
+const inputId = key => key === 'area' || key === 'corners' ? key : 'svc_' + key.slice(4);
+
+document.addEventListener('click', e => {
+  const t = e.target;
+
+  // Кнопки −/+
+  const b = t.closest('[data-inc],[data-dec]');
+  if (b) {
+    const inc = 'inc' in b.dataset, key = inc ? b.dataset.inc : b.dataset.dec;
+    const L = limits(key), old = getValue(key);
+    const v = Math.min(L.max, Math.max(L.min, round2(old + (inc ? L.step : -L.step))));
+    setValue(key, v);
+    const input = $(inputId(key)); input.value = v;
+    if (v !== old) popAnim(input, v > old ? 'bump-up' : 'bump-down', ['bump-up', 'bump-down']);   // отскок цифры + подсветка
+    if (step === 1) showRoomErrors();
+    updatePill(); return;
+  }
+
+  // Подсказка (?): тап раскрывает аккордеон (на десктопе также работает hover)
+  const q = t.closest('[data-tip]');
+  if (q) {
+    const row = q.closest('.svc'), open = !row.classList.contains('open');
+    document.querySelectorAll('.svc.open').forEach(x => { x.classList.remove('open'); x.querySelector('.q').setAttribute('aria-expanded', 'false'); });
+    if (open) { row.classList.add('open'); q.setAttribute('aria-expanded', 'true'); }
+    return;
+  }
+
+  // Тип помещения (на расчёт не влияет) — без перерисовки, чтобы сработала анимация
+  const rt = t.closest('[data-rtype]');
+  if (rt) {
+    rooms[current].roomType = rt.dataset.rtype;
+    document.querySelectorAll('.rtype').forEach(x => { const on = x === rt; x.classList.toggle('sel', on); x.setAttribute('aria-pressed', on); });
+    popAnim(rt, 'pop'); updateWhatsApp(); return;
+  }
+
+  // Выбор фактуры
+  const tex = t.closest('[data-tex]');
+  if (tex) {
+    rooms[current].texture = tex.dataset.tex;
+    document.querySelectorAll('.tex').forEach(x => { const on = x === tex; x.classList.toggle('sel', on); x.setAttribute('aria-pressed', on); });
+    popAnim(tex, 'pop'); updateSurcharge(); updatePill(); return;
+  }
+
+  // Подробная разбивка на шаге 3
+  const det = t.closest('[data-details]');
+  if (det) {
+    const box = $('det_' + det.dataset.details), open = !box.classList.contains('open');
+    box.classList.toggle('open', open);
+    det.setAttribute('aria-expanded', open);
+    det.textContent = open ? TEXTS.detailsHide : TEXTS.detailsShow;
+    return;
+  }
+
+  // Удаление комнаты (с анимацией схлопывания вкладки)
+  const del = t.closest('[data-del]');
+  if (del) {
+    if (tabBusy) return;
+    const i = +del.dataset.del, tabEl = del.closest('.tab');
+    const remove = () => {
+      rooms.splice(i, 1);
+      if (current >= rooms.length) current = rooms.length - 1; else if (i < current) current--;
+      tabBusy = false; renderTabs(true); renderRoomForm(); updatePill();
+    };
+    if (motionOK()) { tabBusy = true; tabEl.classList.add('leave'); setTimeout(remove, 250); } else remove();
+    return;
+  }
+  if (t.closest('#addRoom')) {
+    if (rooms.length < CONFIG.maxRooms) { rooms.push(newRoom()); current = rooms.length - 1; justAdded = current; renderTabs(true); renderRoomForm(); updatePill(); }
+    return;
+  }
+  const tab = t.closest('[data-room]');
+  if (tab) {
+    if (tabBusy) return;
+    current = +tab.dataset.room;
+    if (step === 1) { renderTabs(true); renderRoomForm(); } else { renderTabs(false); renderServices(); }
+    return;
+  }
+
+  // Навигация
+  const go = t.closest('[data-goto]');
+  if (go) { const s = +go.dataset.goto; if (s < step) showStep(s); return; }
+  if (t.closest('[data-next]')) { if (validateStep(step) && step < TOTAL_STEPS) showStep(step + 1); return; }
+  if (t.closest('[data-back]')) { if (step > 1) showStep(step - 1); return; }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') $('modal').classList.remove('open');
+  // Крестик на вкладке доступен с клавиатуры
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.x[data-del]')) { e.preventDefault(); e.target.click(); }
+});
+
+// Ввод числа с клавиатуры: верхний предел применяем сразу, нижний — при потере фокуса
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (!(el.dataset && el.dataset.key)) return;
+  const key = el.dataset.key, L = limits(key);
+  let v = parseFloat(el.value.replace(',', '.'));
+  if (!isFinite(v) || v < 0) v = 0;
+  if (v > L.max) { v = L.max; el.value = v; }
+  setValue(key, v);
+  if (step === 1) showRoomErrors();
+  updatePill();
+});
+document.addEventListener('focusout', e => {
+  const el = e.target;
+  if (!(el.dataset && el.dataset.key)) return;
+  const key = el.dataset.key, L = limits(key);
+  let v = getValue(key);
+  if (key === 'corners') v = Math.round(v);
+  if (key.startsWith('svc:')) v = Math.max(L.min, v);   // у услуг минимум 0
+  el.value = v; setValue(key, v);
+  if (step === 1) showRoomErrors();
+  updatePill();
+});
+
+// Переключатели: цвет полотна, способ оплаты, согласие
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.name === 'roomColor') { rooms[current].color = el.value; updateSurcharge(); updatePill(); }
+  if (el.name === 'pay') lead.payment = el.value;
+  if (el.id === 'fConsent') lead.consent = el.checked;
+});
+
+/* =====================================================================
+   ЗАЯВКА
+   ===================================================================== */
+function syncLead() {
+  $('fName').value = lead.name; $('fPhone').value = lead.phone; $('fComment').value = lead.comment; $('fConsent').checked = lead.consent;
+  document.querySelectorAll('input[name="pay"]').forEach(r => r.checked = r.value === lead.payment);
+}
+$('fName').addEventListener('input', e => lead.name = e.target.value);
+$('fComment').addEventListener('input', e => lead.comment = e.target.value);
+
+/* ---------- Маска телефона +7 (___) ___-__-__ (чистый JS) ---------- */
+function formatPhone(value) {
+  let d = value.replace(/\D/g, '');
+  if (d[0] === '7' || d[0] === '8') d = d.slice(1);   // код страны добавляет маска
+  d = d.slice(0, 10);
+  let out = '+7';
+  if (d.length > 0) out += ' (' + d.slice(0, 3);
+  if (d.length >= 3) out += ')';
+  if (d.length > 3) out += ' ' + d.slice(3, 6);
+  if (d.length > 6) out += '-' + d.slice(6, 8);
+  if (d.length > 8) out += '-' + d.slice(8, 10);
+  return out;
+}
+$('fPhone').addEventListener('input', e => {
+  const el = e.target;
+  // Если стёрли всё до "+7" — очищаем поле
+  el.value = (el.value.replace(/\D/g, '').length <= 1 && e.inputType === 'deleteContentBackward') ? '' : formatPhone(el.value);
+  lead.phone = el.value;
+});
+$('fPhone').addEventListener('focus', e => { if (!e.target.value) { e.target.value = '+7 ('; } });
+$('fPhone').addEventListener('blur', e => { if (e.target.value.replace(/\D/g, '').length <= 1) { e.target.value = ''; lead.phone = ''; } });
+
+// Полный объект заявки: клиент + разбивка по комнатам + итого
+function buildPayload() {
+  const c = calcAll();
+  return {
+    createdAt: new Date().toISOString(),
+    client: {
+      name: lead.name.trim(), phone: lead.phone, comment: lead.comment.trim(),
+      payment: lead.payment, paymentName: TEXTS.payments[lead.payment]
+    },
+    rooms: rooms.map((r, i) => ({
+      name: TEXTS.roomName(i + 1),
+      roomType: r.roomType, roomTypeName: roomTypeOf(r).name,
+      texture: TEXTS.textureNames[r.texture], color: TEXTS.colorNames[r.color],
+      area: r.area, corners: r.corners, services: r.services,
+      lines: c.perRoom[i].lines, subtotal: c.perRoom[i].subtotal
+    })),
+    total: c.total
+  };
+}
+// Текстовый вид заявки (для Telegram / email)
+function payloadToText(p) {
+  let t = `Новая заявка с калькулятора\n\nИмя: ${p.client.name}\nТелефон: ${p.client.phone}\nОплата: ${p.client.paymentName}\nКомментарий: ${p.client.comment || '—'}\n`;
+  p.rooms.forEach(r => {
+    t += `\n${r.name} — ${r.roomTypeName} (${r.texture}, ${r.color})\n`;
+    r.lines.forEach(l => t += `  • ${l.name}: ${num(l.qty)} ${l.unit} × ${num(l.price)} = ${fmt(l.sum)}\n`);
+    t += `  Подитог: ${fmt(r.subtotal)}\n`;
+  });
+  return t + `\nИТОГО: ${fmt(p.total)}`;
+}
+
+// ==========================================
+// ОТПРАВКА ЗАЯВКИ
+// Раскомментируйте нужный вариант:
+// ==========================================
+async function sendLead(payload) {
+  // Вариант 1: Telegram Bot
+  // (создайте бота у @BotFather, узнайте chat_id у @userinfobot или через getUpdates)
+  // const TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN';
+  // const TELEGRAM_CHAT_ID = 'YOUR_CHAT_ID';
+  // const tg = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+  //   method: 'POST',
+  //   headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: payloadToText(payload) })
+  // });
+  // if (!tg.ok) throw new Error('Telegram: ' + tg.status);
+
+  // Вариант 2: Email через EmailJS
+  // (подключите скрипт https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js
+  //  через тег script в <head> и вызовите emailjs.init({ publicKey: 'YOUR_PUBLIC_KEY' }) один раз)
+  // await emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', {
+  //   client_name: payload.client.name,
+  //   client_phone: payload.client.phone,
+  //   message: payloadToText(payload),
+  //   total: payload.total
+  // });
+
+  // Вариант 3: POST на свой сервер
+  // const res = await fetch('https://your-site.ru/api/lead', {
+  //   method: 'POST',
+  //   headers: { 'Content-Type': 'application/json' },
+  //   body: JSON.stringify(payload)
+  // });
+  // if (!res.ok) throw new Error('Сервер: ' + res.status);
+
+  return true; // в демо-режиме заявка никуда не уходит
+}
+
+$('leadForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!validateLead()) return;
+  const payload = buildPayload();
+  console.log('Заявка:', JSON.stringify(payload, null, 2));   // JSON заявки в консоль
+
+  const btn = $('submitBtn'); btn.disabled = true;
+  try { await sendLead(payload); }
+  catch (err) { console.error(err); btn.disabled = false; alert('Не удалось отправить заявку. Позвоните нам: ' + CONFIG.phone); return; }
+  btn.disabled = false;
+
+  $('mTitle').textContent = TEXTS.modalTitle(lead.name.trim());
+  $('mText').textContent = TEXTS.modalText;
+  $('modal').classList.add('open');
+  $('mAgain').focus();
+});
+
+// "Рассчитать ещё раз" — полный сброс
+$('mAgain').addEventListener('click', () => { $('modal').classList.remove('open'); fullReset(); });
+$('modal').addEventListener('click', e => { if (e.target === $('modal')) $('modal').classList.remove('open'); });
+
+/* ---------- Сброс, "Заказать звонок", "Узнать точную цену" ---------- */
+function fullReset() { resetState(); lastTotal = null; showStep(1); }
+$('resetBtn').addEventListener('click', () => { if (confirm(TEXTS.resetConfirm)) fullReset(); });
+
+// "Заказать звонок": плавно ведём к форме заявки (шаг 4), если параметры комнат корректны
+$('callBtn').addEventListener('click', () => {
+  const toForm = () => { $('leadStep').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => $('fName').focus({ preventScroll: true }), 500); };
+  if (step === 4) { toForm(); return; }
+  const bad = firstInvalidRoom();
+  if (bad >= 0) { current = bad; showStep(1); return; }
+  showStep(4, true, toForm);
+});
+
+// "Узнать точную цену" в плашке: со шагов 1–2 сразу на шаг 4 (если шаг 1 валиден), со шага 3 — на шаг 4
+$('quickBtn').addEventListener('click', () => {
+  if (step >= 4) return;
+  if (step < 3) {
+    const bad = firstInvalidRoom();
+    if (bad >= 0) {
+      current = bad;
+      if (step !== 1) showStep(1); else { renderTabs(true); renderRoomForm(); }
+      return;
+    }
+  }
+  showStep(4);
+});
+
+/* =====================================================================
+   СТАРТ
+   ===================================================================== */
+// Тень шапки при прокрутке
+const head = $('siteHead');
+const onScroll = () => head.classList.toggle('scrolled', window.scrollY > 20);
+window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+
+// Счётчик: count-up при появлении в зоне видимости
+function initCounter() {
+  const el = $('counterNum'), fmtN = v => Math.round(v).toLocaleString('ru-RU');
+  if (!('IntersectionObserver' in window) || !motionOK()) { el.textContent = fmtN(CONFIG.counter); return; }
+  el.textContent = '0';
+  const io = new IntersectionObserver(entries => {
+    if (entries.some(en => en.isIntersecting)) { countUp(el, CONFIG.counter, 1800, fmtN); io.disconnect(); }
+  }, { threshold: 0.6 });
+  io.observe($('counter'));
+}
+
+applyTheme();
+applyTexts();
+buildProgress();
+resetState();
+initCounter();
+showStep(1, true);
+</script>
+</body>
+</html>
